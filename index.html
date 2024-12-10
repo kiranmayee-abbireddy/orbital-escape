@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbital Escape</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "./node_modules/three/build/three.module.js",
+            "three/examples/jsm/controls/OrbitControls": "./node_modules/three/examples/jsm/controls/OrbitControls.js",
+            "three/addons/": "./node_modules/three/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Game canvas will be inserted here by Three.js -->
+    </div>
+
+    <div id="game-ui">
+        <!-- HUD Elements -->
+        <div class="hud-top">
+            <div class="score">Score: <span id="score-value">0</span></div>
+            <div class="timer">Time: <span id="timer-value">0:00</span></div>
+        </div>
+        
+        <div class="hud-bottom">
+            <div class="energy-bar">
+                <div class="label">Energy</div>
+                <div class="bar-container">
+                    <div id="energy-fill"></div>
+                </div>
+            </div>
+            <div class="shield-status">Shield: <span id="shield-ready">Ready</span></div>
+        </div>
+
+        <!-- Game State Overlays -->
+        <div id="pause-menu" class="overlay hidden">
+            <h2>Paused</h2>
+            <button id="resume">Resume</button>
+            <button id="restart">Restart</button>
+        </div>
+
+        <div id="start-menu" class="overlay">
+            <h1>Orbital Escape</h1>
+            <button id="start-game">Start Game</button>
+            <div class="controls-info">
+                <h3>Controls</h3>
+                <p>WASD / Arrow Keys - Move</p>
+                <p>Q/Shift - Move Up</p>
+                <p>E/Ctrl - Move Down</p>
+                <p>Space - Activate Shield</p>
+                <p>ESC - Pause</p>
+            </div>
+        </div>
+
+        <div id="game-over" class="overlay hidden">
+            <h2>Game Over</h2>
+            <div class="final-stats">
+                <p>Score: <span id="final-score">0</span></p>
+                <p>Time: <span id="final-time">0:00</span></p>
+            </div>
+            <button id="restart-game">Try Again</button>
+            <button id="return-menu">Main Menu</button>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
