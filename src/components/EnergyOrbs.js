@@ -1,4 +1,4 @@
-import * as THREE from '../../node_modules/three/build/three.module.js';
+import * as THREE from 'three';
 
 export class EnergyOrbs {
     constructor(scene, gameState) {
@@ -9,7 +9,6 @@ export class EnergyOrbs {
         this.maxOrbs = 20;
         this.lastPlayerPos = new THREE.Vector3();
         this.spawnThreshold = 40;
-        this.spaceship = null;
         
         // Create shared geometry and material for all orbs
         this.geometry = new THREE.SphereGeometry(0.5, 8, 8);
@@ -21,27 +20,15 @@ export class EnergyOrbs {
             opacity: 0.8
         });
 
-        // Create glow effect material
-        this.glowGeometry = new THREE.SphereGeometry(0.8, 16, 16);
-        this.glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00ffff,
-            transparent: true,
-            opacity: 0.2
-        });
+        // Initialize with default position
+        this.generateInitialOrbs();
 
         // Add collection effect properties
         this.collectionEffects = [];
-        
-        // Create collection effect material
-        this.effectMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00ffff,
-            transparent: true,
-            opacity: 0.5,
-            side: THREE.DoubleSide,
-            blending: THREE.AdditiveBlending
-        });
-
-        this.generateInitialOrbs();
+        this.playerCollectionRadius = 20; // Larger radius for player
+        this.aiCollectionRadius = 2.5;    // Smaller radius for AI ships
+        this.attractionRadius = 25;       // Adjusted attraction radius
+        this.collectionCooldown = new Map();
     }
 
     generateInitialOrbs() {
@@ -51,7 +38,13 @@ export class EnergyOrbs {
         }
     }
 
-    spawnOrb(centerPos) {
+    spawnOrb(centerPos = new THREE.Vector3(0, 0, 0)) {
+        // Ensure centerPos is a Vector3
+        if (!(centerPos instanceof THREE.Vector3)) {
+            console.warn('Invalid centerPos, using default position');
+            centerPos = new THREE.Vector3(0, 0, 0);
+        }
+
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos((Math.random() * 2) - 1);
         const r = this.spawnRadius * (0.3 + Math.random() * 0.7);
@@ -63,50 +56,33 @@ export class EnergyOrbs {
         );
 
         const orb = new THREE.Mesh(this.geometry, this.material);
-        const glow = new THREE.Mesh(this.glowGeometry, this.glowMaterial);
-        
         orb.position.copy(position);
-        glow.position.copy(position);
-        
-        orb.add(glow);
         this.orbs.push(orb);
         this.scene.add(orb);
+        
+        // Store reference in gameState
+        this.gameState.energyOrbs = this;
+        
         return orb;
     }
 
-    update(time, playerPosition) {
-        const spaceshipPos = this.gameState.spaceships[0].position;
-        const attractionRadius = 40; // Larger radius for initial attraction
-        const collectionRadius = 5; // Smaller radius for actual collection
+    update(playerPosition) {
+        if (!playerPosition) {
+            console.warn('Invalid player position in EnergyOrbs update');
+            return;
+        }
 
-        this.orbs.forEach(orb => {
-            const distance = spaceshipPos.distanceTo(orb.position);
-            
-            // Attraction zone
-            if (distance < attractionRadius) {
-                const direction = new THREE.Vector3().subVectors(spaceshipPos, orb.position);
-                direction.normalize();
-                
-                // Exponential attraction force (stronger as orbs get closer)
-                const force = Math.pow(1 - distance / attractionRadius, 2) * 0.5;
-                orb.position.add(direction.multiplyScalar(force));
-                
-                // Make orbs glow brighter and spin faster when being attracted
-                orb.rotation.y += 0.1;
-                orb.material.opacity = Math.min(1, 0.8 + force);
-                if (orb.children[0]) {
-                    orb.children[0].material.opacity = Math.min(1, 0.4 + force);
-                    orb.children[0].scale.setScalar(1 + force);
-                }
-            }
-        });
-
+        // Check collisions with all spaceships
+        this.checkCollisions();
+        
+        // Update attraction effects
+        this.updateAttractionEffects();
+        
+        // Maintain orb field
+        this.maintainOrbField(playerPosition);
+        
         // Update collection effects
         this.updateCollectionEffects();
-
-        // Check for collection and maintain orb field
-        this.checkCollisions(collectionRadius);
-        this.maintainOrbField(playerPosition);
     }
 
     maintainOrbField(playerPosition) {
@@ -116,40 +92,79 @@ export class EnergyOrbs {
         }
     }
 
-    // Check for collision with spaceship and collect orb
-    checkCollisions(collectionRadius) {
-        this.gameState.spaceships.forEach(ship => {
-            const shipPos = ship.position;
-            this.orbs.forEach((orb, index) => {
-                if (shipPos.distanceTo(orb.position) < collectionRadius) {
-                    // Call collect on the ship
-                    ship.collect(10);
+    checkCollisions() {
+        if (!this.gameState.spaceships) return;
+        const now = Date.now();
+
+        for (let i = this.orbs.length - 1; i >= 0; i--) {
+            const orb = this.orbs[i];
+            
+            this.gameState.spaceships.forEach((ship, shipIndex) => {
+                if (!ship.position) return;
+                
+                // Check cooldown
+                const lastCollection = this.collectionCooldown.get(ship) || 0;
+                if (now - lastCollection < 500) return;
+
+                const distance = ship.position.distanceTo(orb.position);
+                // Use different collection radius for player vs AI
+                const effectiveRadius = shipIndex === 0 ? 
+                    this.playerCollectionRadius : this.aiCollectionRadius;
+                
+                if (distance < effectiveRadius) {
+                    // Remove the orb
+                    this.scene.remove(orb);
+                    this.orbs.splice(i, 1);
                     
                     // Create collection effect
                     this.createCollectionEffect(orb.position.clone());
                     
-                    // Remove the orb
-                    this.scene.remove(orb);
-                    this.orbs.splice(index, 1);
+                    // Update collection cooldown
+                    this.collectionCooldown.set(ship, now);
                     
-                    // Only update score for player collection (first ship)
-                    if (ship === this.gameState.spaceships[0]) {
-                        // Update game state with bonus for quick collection
-                        const speedBonus = Math.floor(ship.velocity.length() * 5);
-                        this.gameState.score += 10 + speedBonus;
+                    // Update game state - both player and AI get points
+                    if (shipIndex === 0) {
+                        this.gameState.score += 100;
+                    } else {
+                        ship.score += 100;
                     }
+                    ship.collect(20);
+                    
+                    return;
                 }
             });
+        }
+    }
+
+    updateAttractionEffects() {
+        const player = this.gameState.spaceships[0];
+        if (!player || !player.position || !player.magneticFieldActive) return;
+
+        this.orbs.forEach(orb => {
+            const distance = player.position.distanceTo(orb.position);
+            if (distance < this.attractionRadius) {
+                const direction = new THREE.Vector3().subVectors(player.position, orb.position);
+                direction.normalize();
+                const force = (1 - distance / this.attractionRadius) * 0.5;
+                orb.position.add(direction.multiplyScalar(force));
+            }
         });
     }
 
     createCollectionEffect(position) {
         const geometry = new THREE.RingGeometry(0, 2, 16);
-        const effect = new THREE.Mesh(geometry, this.effectMaterial.clone());
+        const material = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 1,
+            side: THREE.DoubleSide
+        });
+        
+        const effect = new THREE.Mesh(geometry, material);
         effect.position.copy(position);
-        effect.material.opacity = 1;
         effect.scale.setScalar(0.1);
         effect.life = 1.0;
+        
         this.scene.add(effect);
         this.collectionEffects.push(effect);
     }

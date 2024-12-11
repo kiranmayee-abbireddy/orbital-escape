@@ -1,4 +1,4 @@
-import * as THREE from '../../node_modules/three/build/three.module.js';
+import * as THREE from 'three';
 
 export class InputHandler {
     constructor(spaceship) {
@@ -8,225 +8,153 @@ export class InputHandler {
             ArrowDown: false,
             ArrowLeft: false,
             ArrowRight: false,
+            w: false,
+            a: false,
+            s: false,
+            d: false,
             q: false,
-            e: false
+            e: false,
+            Shift: false,
+            Control: false,
+            Space: false
         };
 
-        // Touch controls
+        // Touch controls state
         this.touchControls = {
-            active: false,
-            startX: 0,
-            startY: 0,
             moveX: 0,
             moveY: 0,
-            verticalStartY: 0,
-            verticalMoveY: 0
+            verticalMoveY: 0,
+            touchStartX: 0,
+            touchStartY: 0
         };
 
-        // Create touch UI elements
-        this.createTouchUI();
+        this.setupKeyboardControls();
+        this.setupTouchControls();
+    }
 
+    setupKeyboardControls() {
         // Event listeners for keyboard
-        document.addEventListener('keydown', (e) => this.onKeyDown(e));
-        document.addEventListener('keyup', (e) => this.onKeyUp(e));
+        document.addEventListener('keydown', (e) => {
+            if (this.keys.hasOwnProperty(e.key)) {
+                this.keys[e.key] = true;
+                e.preventDefault(); // Prevent default browser scrolling
+            }
+            // Handle WASD keys
+            if (e.key.toLowerCase() === 'w') this.keys.ArrowUp = true;
+            if (e.key.toLowerCase() === 'a') this.keys.ArrowLeft = true;
+            if (e.key.toLowerCase() === 's') this.keys.ArrowDown = true;
+            if (e.key.toLowerCase() === 'd') this.keys.ArrowRight = true;
+        });
 
-        // Event listeners for touch
-        this.joystick.addEventListener('touchstart', (e) => this.onTouchStart(e));
-        document.addEventListener('touchmove', (e) => this.onTouchMove(e));
-        document.addEventListener('touchend', (e) => this.onTouchEnd(e));
-        
-        // Vertical control events
-        this.verticalControl.addEventListener('touchstart', (e) => this.onVerticalTouchStart(e));
-        this.verticalControl.addEventListener('touchmove', (e) => this.onVerticalTouchMove(e));
-        this.verticalControl.addEventListener('touchend', (e) => this.onVerticalTouchEnd(e));
+        document.addEventListener('keyup', (e) => {
+            if (this.keys.hasOwnProperty(e.key)) {
+                this.keys[e.key] = false;
+            }
+            // Handle WASD keys
+            if (e.key.toLowerCase() === 'w') this.keys.ArrowUp = false;
+            if (e.key.toLowerCase() === 'a') this.keys.ArrowLeft = false;
+            if (e.key.toLowerCase() === 's') this.keys.ArrowDown = false;
+            if (e.key.toLowerCase() === 'd') this.keys.ArrowRight = false;
+        });
     }
 
-    createTouchUI() {
-        // Create joystick container
-        this.joystick = document.createElement('div');
-        this.joystick.className = 'joystick';
-        this.joystick.innerHTML = '<div class="joystick-knob"></div>';
-        document.body.appendChild(this.joystick);
-
-        // Create vertical control
-        this.verticalControl = document.createElement('div');
-        this.verticalControl.className = 'vertical-control';
-        this.verticalControl.innerHTML = '<div class="vertical-knob"></div>';
-        document.body.appendChild(this.verticalControl);
-
-        // Add styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .joystick {
-                position: fixed;
-                left: 50px;
-                bottom: 50px;
-                width: 120px;
-                height: 120px;
-                background: rgba(255, 255, 255, 0.2);
-                border-radius: 60px;
-                touch-action: none;
-            }
-            .joystick-knob {
-                position: absolute;
-                left: 50%;
-                top: 50%;
-                width: 50px;
-                height: 50px;
-                background: rgba(255, 255, 255, 0.5);
-                border-radius: 25px;
-                transform: translate(-50%, -50%);
-            }
-            .vertical-control {
-                position: fixed;
-                right: 50px;
-                bottom: 50px;
-                width: 80px;
-                height: 200px;
-                background: rgba(255, 255, 255, 0.2);
-                border-radius: 40px;
-                touch-action: none;
-            }
-            .vertical-knob {
-                position: absolute;
-                left: 50%;
-                top: 50%;
-                width: 60px;
-                height: 60px;
-                background: rgba(255, 255, 255, 0.5);
-                border-radius: 30px;
-                transform: translate(-50%, -50%);
-            }
+    setupTouchControls() {
+        // Create touch control elements
+        const touchControls = document.createElement('div');
+        touchControls.className = 'touch-controls';
+        touchControls.innerHTML = `
+            <div class="touch-zone movement-zone"></div>
+            <div class="touch-zone vertical-zone"></div>
+            <div class="touch-buttons">
+                <button class="shield-button">Shield</button>
+                <button class="magnet-button">Magnet</button>
+            </div>
         `;
-        document.head.appendChild(style);
-    }
+        document.body.appendChild(touchControls);
 
-    onTouchStart(e) {
-        const touch = e.touches[0];
-        const rect = this.joystick.getBoundingClientRect();
-        this.touchControls.active = true;
-        this.touchControls.startX = touch.clientX - rect.left;
-        this.touchControls.startY = touch.clientY - rect.top;
-        e.preventDefault();
-    }
+        // Get touch zones
+        const movementZone = touchControls.querySelector('.movement-zone');
+        const verticalZone = touchControls.querySelector('.vertical-zone');
+        const shieldButton = touchControls.querySelector('.shield-button');
+        const magnetButton = touchControls.querySelector('.magnet-button');
 
-    onTouchMove(e) {
-        if (!this.touchControls.active) return;
-        const touch = e.touches[0];
-        const rect = this.joystick.getBoundingClientRect();
-        
-        this.touchControls.moveX = touch.clientX - rect.left - this.touchControls.startX;
-        this.touchControls.moveY = touch.clientY - rect.top - this.touchControls.startY;
-        
-        // Limit joystick movement
-        const maxDistance = 35;
-        const distance = Math.sqrt(
-            this.touchControls.moveX * this.touchControls.moveX + 
-            this.touchControls.moveY * this.touchControls.moveY
-        );
-        
-        if (distance > maxDistance) {
-            const scale = maxDistance / distance;
-            this.touchControls.moveX *= scale;
-            this.touchControls.moveY *= scale;
-        }
+        // Movement zone touch handlers
+        movementZone.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            this.touchControls.touchStartX = touch.clientX;
+            this.touchControls.touchStartY = touch.clientY;
+        });
 
-        // Update joystick knob position
-        const knob = this.joystick.querySelector('.joystick-knob');
-        knob.style.transform = `translate(${this.touchControls.moveX}px, ${this.touchControls.moveY}px)`;
-        
-        e.preventDefault();
-    }
+        movementZone.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            this.touchControls.moveX = (touch.clientX - this.touchControls.touchStartX) / 50;
+            this.touchControls.moveY = (touch.clientY - this.touchControls.touchStartY) / 50;
+        });
 
-    onTouchEnd(e) {
-        this.touchControls.active = false;
-        this.touchControls.moveX = 0;
-        this.touchControls.moveY = 0;
-        
-        // Reset joystick knob position
-        const knob = this.joystick.querySelector('.joystick-knob');
-        knob.style.transform = 'translate(-50%, -50%)';
-        
-        e.preventDefault();
-    }
+        movementZone.addEventListener('touchend', () => {
+            this.touchControls.moveX = 0;
+            this.touchControls.moveY = 0;
+        });
 
-    onVerticalTouchStart(e) {
-        const touch = e.touches[0];
-        const rect = this.verticalControl.getBoundingClientRect();
-        this.touchControls.verticalStartY = touch.clientY - rect.top;
-        e.preventDefault();
-    }
+        // Vertical movement zone handlers
+        verticalZone.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            this.touchControls.touchStartY = touch.clientY;
+        });
 
-    onVerticalTouchMove(e) {
-        const touch = e.touches[0];
-        const rect = this.verticalControl.getBoundingClientRect();
-        this.touchControls.verticalMoveY = touch.clientY - rect.top - this.touchControls.verticalStartY;
-        
-        // Limit vertical movement
-        const maxDistance = 70;
-        this.touchControls.verticalMoveY = Math.max(-maxDistance, 
-            Math.min(maxDistance, this.touchControls.verticalMoveY));
+        verticalZone.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            this.touchControls.verticalMoveY = (touch.clientY - this.touchControls.touchStartY) / 50;
+        });
 
-        // Update vertical control knob position
-        const knob = this.verticalControl.querySelector('.vertical-knob');
-        knob.style.transform = `translate(-50%, ${this.touchControls.verticalMoveY}px)`;
-        
-        e.preventDefault();
-    }
+        verticalZone.addEventListener('touchend', () => {
+            this.touchControls.verticalMoveY = 0;
+        });
 
-    onVerticalTouchEnd(e) {
-        this.touchControls.verticalMoveY = 0;
-        
-        // Reset vertical control knob position
-        const knob = this.verticalControl.querySelector('.vertical-knob');
-        knob.style.transform = 'translate(-50%, -50%)';
-        
-        e.preventDefault();
-    }
+        // Shield button handler
+        shieldButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.keys.Space = true;
+        });
 
-    onKeyDown(event) {
-        const key = event.key;
-        if (key in this.keys) {
-            this.keys[key] = true;
-            event.preventDefault(); // Prevent default browser scrolling
-        }
-    }
+        shieldButton.addEventListener('touchend', () => {
+            this.keys.Space = false;
+        });
 
-    onKeyUp(event) {
-        const key = event.key;
-        if (key in this.keys) {
-            this.keys[key] = false;
-        }
+        // Magnet button handler
+        magnetButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.keys.Shift = true;
+        });
+
+        magnetButton.addEventListener('touchend', () => {
+            this.keys.Shift = false;
+        });
     }
 
     update() {
-        // Handle keyboard input
-        this.spaceship.moveForward = this.keys.ArrowUp;
-        this.spaceship.moveBackward = this.keys.ArrowDown;
-        this.spaceship.moveLeft = this.keys.ArrowLeft;
-        this.spaceship.moveRight = this.keys.ArrowRight;
+        // Keyboard controls
+        this.spaceship.moveForward = this.keys.ArrowUp || this.keys.w;
+        this.spaceship.moveBackward = this.keys.ArrowDown || this.keys.s;
+        this.spaceship.moveLeft = this.keys.ArrowLeft || this.keys.a;
+        this.spaceship.moveRight = this.keys.ArrowRight || this.keys.d;
         this.spaceship.moveUp = this.keys.q;
         this.spaceship.moveDown = this.keys.e;
+        this.spaceship.shieldActive = this.keys.Space;
+        this.spaceship.magneticFieldActive = this.keys.Shift;
 
-        // Handle touch input
-        if (this.touchControls.active) {
-            const deadzone = 5;
-            const sensitivity = 0.03;
-            
-            // Horizontal and forward/backward movement
-            if (Math.abs(this.touchControls.moveX) > deadzone) {
-                this.spaceship.moveRight = this.touchControls.moveX > 0;
-                this.spaceship.moveLeft = this.touchControls.moveX < 0;
-            }
-            
-            if (Math.abs(this.touchControls.moveY) > deadzone) {
-                this.spaceship.moveForward = this.touchControls.moveY < 0;
-                this.spaceship.moveBackward = this.touchControls.moveY > 0;
-            }
+        // Touch controls
+        if (Math.abs(this.touchControls.moveX) > 0.1 || Math.abs(this.touchControls.moveY) > 0.1) {
+            this.spaceship.moveLeft = this.touchControls.moveX < 0;
+            this.spaceship.moveRight = this.touchControls.moveX > 0;
+            this.spaceship.moveForward = this.touchControls.moveY < 0;
+            this.spaceship.moveBackward = this.touchControls.moveY > 0;
         }
 
         // Handle vertical movement from vertical control
-        if (Math.abs(this.touchControls.verticalMoveY) > 5) {
+        if (Math.abs(this.touchControls.verticalMoveY) > 0.1) {
             this.spaceship.moveUp = this.touchControls.verticalMoveY < 0;
             this.spaceship.moveDown = this.touchControls.verticalMoveY > 0;
         }

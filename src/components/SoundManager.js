@@ -1,4 +1,4 @@
-import * as THREE from '../../node_modules/three/build/three.module.js';
+import * as THREE from 'three';
 
 export class SoundManager {
     constructor() {
@@ -6,9 +6,7 @@ export class SoundManager {
         this.listener = new THREE.AudioListener();
         this.audioLoader = new THREE.AudioLoader();
         this.sounds = {};
-        
-        // Initialize sound effects
-        this.initializeSounds();
+        this.initialized = false;
     }
 
     async initializeSounds() {
@@ -23,21 +21,22 @@ export class SoundManager {
             tractor: new THREE.Audio(this.listener)
         };
 
-        // Load and set up sound files using direct URLs
+        // Use local audio files or free-to-use URLs
         try {
             await Promise.all([
-                this.loadSound('engine', 'https://cdn.pixabay.com/download/audio/2022/03/24/audio_c8c8a73467.mp3', 0.3, true),
-                this.loadSound('collect', 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c6a442.mp3', 0.5),
-                this.loadSound('shield', 'https://cdn.pixabay.com/download/audio/2022/03/22/audio_c8595d6c67.mp3', 0.4),
-                this.loadSound('collision', 'https://cdn.pixabay.com/download/audio/2022/03/25/audio_c8a49a2c42.mp3', 0.4),
-                this.loadSound('gameOver', 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_c8c8b3312d.mp3', 0.5),
-                this.loadSound('background', 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_c84861c9c6.mp3', 0.2, true),
-                this.loadSound('tractor', 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8595d6c67.mp3', 0.3, true)
+                this.loadSound('engine', 'assets/sounds/engine.mp3', 0.3, true),
+                this.loadSound('collect', 'assets/sounds/collect.mp3', 0.5),
+                this.loadSound('shield', 'assets/sounds/shield.mp3', 0.4),
+                this.loadSound('collision', 'assets/sounds/collision.mp3', 0.4),
+                this.loadSound('gameOver', 'assets/sounds/gameover.mp3', 0.5),
+                this.loadSound('background', 'assets/sounds/background.mp3', 0.2, true),
+                this.loadSound('tractor', 'assets/sounds/tractor.mp3', 0.3, true)
             ]);
+            this.initialized = true;
             console.log('All sounds loaded successfully');
         } catch (error) {
             console.warn('Some sound files failed to load:', error);
-            // Continue game without sound if loading fails
+            this.initialized = true; // Continue without sound
         }
     }
 
@@ -85,7 +84,9 @@ export class SoundManager {
     }
 
     startBackgroundMusic() {
-        this.playSound('background');
+        if (this.initialized && this.sounds.background) {
+            this.sounds.background.play();
+        }
     }
 
     stopBackgroundMusic() {

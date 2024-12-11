@@ -132,38 +132,88 @@ button:hover {
     transform: scale(1.05);
 }
 
+/* Controls info styling */
 .controls-info {
-    margin-top: 30px;
-    text-align: center;
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    border: 1px solid rgba(0, 255, 255, 0.3);
 }
 
 .controls-info h3 {
-    margin-bottom: 15px;
     color: #00ffff;
+    margin-bottom: 10px;
+    text-align: center;
 }
 
 .controls-info p {
-    margin: 5px 0;
+    margin: 8px 0;
     font-size: 16px;
+    color: #ffffff;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* Desktop/Mobile controls visibility */
+.mobile-controls {
+    display: none;
+}
+
+/* Media query for mobile devices */
+@media (hover: none) and (pointer: coarse) {
+    .desktop-controls {
+        display: none;
+    }
+    
+    .mobile-controls {
+        display: block;
+    }
+
+    /* Make controls info more compact on mobile */
+    .controls-info {
+        margin-top: 15px;
+        padding: 10px;
+    }
+
+    .controls-info p {
+        font-size: 14px;
+        margin: 6px 0;
+    }
+
+    /* Adjust overlay size for mobile */
+    .overlay {
+        padding: 15px;
+        max-width: 90%;
+        min-width: 280px;
+    }
+
+    /* Make buttons more touchable */
+    .overlay button {
+        padding: 12px 24px;
+        margin: 8px 0;
+        min-height: 44px; /* Minimum touch target size */
+    }
+}
+
+/* Additional mobile optimizations */
+@media screen and (max-width: 480px) {
     .hud-top {
         font-size: 18px;
+        top: 10px;
+        padding: 0 10px;
+    }
+
+    .hud-bottom {
+        padding: 0 10px;
+        bottom: 10px;
     }
 
     .energy-bar {
         width: 200px;
     }
 
-    .overlay h1 {
-        font-size: 36px;
-    }
-
-    button {
-        padding: 12px 24px;
-        font-size: 16px;
+    .shield-status {
+        font-size: 14px;
+        padding: 3px 10px;
     }
 }
 
@@ -203,4 +253,200 @@ button:hover {
 
 .camera-controls p {
     margin: 5px 0;
+}
+
+/* Touch controls */
+.touch-controls {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 200px;
+    pointer-events: none;
+}
+
+.touch-zone {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    border-radius: 75px;
+    background: rgba(255, 255, 255, 0.2);
+    pointer-events: auto;
+}
+
+.movement-zone {
+    left: 20px;
+    bottom: 20px;
+}
+
+.vertical-zone {
+    right: 20px;
+    bottom: 20px;
+}
+
+.touch-buttons {
+    position: absolute;
+    right: 180px;
+    bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: auto;
+}
+
+.touch-buttons button {
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    font-size: 12px;
+}
+
+/* Show touch controls only on touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .touch-controls {
+        display: block;
+    }
+}
+
+/* Add Leaderboard styling */
+.leaderboard {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #00ffff;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.leaderboard h3 {
+    color: #00ffff;
+    text-align: center;
+    font-size: 20px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+#rankings-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.ranking-item {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    margin: 2px 0;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.5);
+    transition: background-color 0.3s ease;
+}
+
+.ranking-item .position {
+    width: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.ship-icon {
+    font-size: 18px;
+    transform: rotate(-45deg);
+    display: inline-block;
+}
+
+.ship-icon.player-ship {
+    color: #00ffff;
+}
+
+.ship-icon.ai-ship-1 {
+    color: #ff69b4;
+}
+
+.ship-icon.ai-ship-2 {
+    color: #ffa500;
+}
+
+.ship-icon.ai-ship-3 {
+    color: #00ff7f;
+}
+
+/* Optional: Add hover effect */
+.ranking-item:hover .ship-icon {
+    transform: rotate(-45deg) scale(1.2);
+    transition: transform 0.2s ease;
+}
+
+/* Optional: Add animation for highest score */
+.ranking-item.highest-score .ship-icon {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: rotate(-45deg) scale(1); }
+    50% { transform: rotate(-45deg) scale(1.2); }
+    100% { transform: rotate(-45deg) scale(1); }
+}
+
+.ranking-item .name {
+    flex: 1;
+    padding: 0 10px;
+    color: #fff;
+    font-size: 16px;
+}
+
+.ranking-item .score {
+    width: 100px;
+    text-align: right;
+    color: #00ffff;
+    font-family: monospace;
+    font-size: 16px;
+    padding-right: 5px;
+}
+
+.ranking-item.player {
+    background: rgba(0, 255, 255, 0.1);
+}
+
+.ranking-item.highest-score {
+    background: rgba(255, 215, 0, 0.2);
+    border: 1px solid rgba(255, 215, 0, 0.5);
+}
+
+.ranking-item.highest-score .score {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.player-name-input {
+    margin: 15px 0;
+}
+
+#player-name {
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid #00ffff;
+    color: #fff;
+    padding: 8px;
+    border-radius: 5px;
+    text-align: center;
+    width: 200px;
+}
+
+.pilot-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1;
+    margin: 0 10px;
+}
+
+.personality {
+    font-size: 12px;
+    color: #00ffaa;
+    opacity: 0.8;
 }

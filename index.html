@@ -8,9 +8,9 @@
     <script type="importmap">
     {
         "imports": {
-            "three": "./libs/three/build/three.module.js",
-            "three/examples/jsm/controls/OrbitControls": "./libs/three/examples/jsm/controls/OrbitControls.js",
-            "three/addons/": "./libs/three/examples/jsm/"
+            "three": "https://unpkg.com/three@0.171.0/build/three.module.js",
+            "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.171.0/examples/jsm/controls/OrbitControls.js",
+            "three/addons/": "https://unpkg.com/three@0.171.0/examples/jsm/"
         }
     }
     </script>
@@ -47,13 +47,26 @@
         <div id="start-menu" class="overlay">
             <h1>Orbital Escape</h1>
             <button id="start-game">Start Game</button>
+            <div class="player-name-input">
+                <input type="text" id="player-name" placeholder="Enter your name" maxlength="15" value="Player">
+            </div>
             <div class="controls-info">
                 <h3>Controls</h3>
-                <p>WASD / Arrow Keys - Move</p>
-                <p>Q/Shift - Move Up</p>
-                <p>E/Ctrl - Move Down</p>
-                <p>Space - Activate Shield</p>
-                <p>ESC - Pause</p>
+                <!-- Desktop controls - will be hidden on mobile -->
+                <div class="desktop-controls">
+                    <p>WASD / Arrow Keys - Move</p>
+                    <p>Q/E - Move Up/Down</p>
+                    <p>Space - Shield</p>
+                    <p>Shift - Magnetic Field</p>
+                    <p>ESC - Pause</p>
+                </div>
+                <!-- Mobile controls - will be shown only on mobile -->
+                <div class="mobile-controls">
+                    <p>Left Joystick - Move</p>
+                    <p>Right Joystick - Up/Down</p>
+                    <p>Shield Button - Activate Shield</p>
+                    <p>Magnet Button - Magnetic Field</p>
+                </div>
             </div>
         </div>
 
@@ -65,6 +78,13 @@
             </div>
             <button id="restart-game">Try Again</button>
             <button id="return-menu">Main Menu</button>
+        </div>
+
+        <div class="leaderboard">
+            <h3>Arena Rankings</h3>
+            <div id="rankings-list">
+                <!-- Rankings will be populated dynamically -->
+            </div>
         </div>
     </div>
 
