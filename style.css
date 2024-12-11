@@ -27,15 +27,7 @@ body {
 
 /* HUD Styling */
 .hud-top {
-    position: absolute;
-    top: 20px;
-    width: 100%;
-    padding: 0 20px;
-    display: flex;
-    justify-content: space-between;
-    color: #fff;
-    font-size: 24px;
-    text-shadow: 0 0 5px rgba(0,255,255,0.7);
+    display: none;
 }
 
 .hud-bottom {

@@ -2,10 +2,6 @@ export class UIController {
     constructor(gameState, soundManager) {
         this.gameState = gameState;
         this.soundManager = soundManager;
-        this.startTime = 0;
-        
-        this.lastUpdateTime = 0;
-        this.updateInterval = 100; // Update every 100ms instead of every frame
         
         // Fixed positions for AI pilots
         this.aiPilots = [
@@ -22,15 +18,12 @@ export class UIController {
 
     setupElements() {
         // Get all UI elements
-        this.scoreElement = document.getElementById('score-value');
-        this.timerElement = document.getElementById('timer-value');
         this.energyFill = document.getElementById('energy-fill');
         this.shieldStatus = document.getElementById('shield-ready');
         this.startMenu = document.getElementById('start-menu');
         this.pauseMenu = document.getElementById('pause-menu');
         this.gameOverMenu = document.getElementById('game-over');
         this.finalScore = document.getElementById('final-score');
-        this.finalTime = document.getElementById('final-time');
         this.rankingsList = document.getElementById('rankings-list');
         this.playerNameInput = document.getElementById('player-name');
         
@@ -97,7 +90,6 @@ export class UIController {
         this.gameState.gameOver = false;
         this.gameState.score = 0;
         this.gameState.energy = 100;
-        this.startTime = Date.now();
 
         // Start background music
         if (this.soundManager) {
@@ -132,7 +124,6 @@ export class UIController {
     restartGame() {
         this.gameState.score = 0;
         this.gameState.energy = 100;
-        this.startTime = Date.now();
         this.gameState.paused = false;
         this.pauseMenu.classList.add('hidden');
         // Additional reset logic can be added here
@@ -163,44 +154,19 @@ export class UIController {
     }
 
     showGameOver() {
-        this.finalScore.textContent = this.gameState.score;
-        this.finalTime.textContent = this.timerElement.textContent;
         this.gameOverMenu.classList.remove('hidden');
+        // Only show final score from rankings
+        const playerScore = this.rankings.find(r => r.isPlayer)?.score || 0;
+        this.finalScore.textContent = playerScore;
     }
 
     update() {
         if (!this.gameState.gameStarted) return;
 
-        // Update score
-        if (this.scoreElement) {
-            this.scoreElement.textContent = this.gameState.score;
-        }
-
-        // Update timer
-        if (this.timerElement) {
-            const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
-            const minutes = Math.floor(elapsed / 60);
-            const seconds = elapsed % 60;
-            this.timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        }
-
-        // Update energy bar
-        if (this.energyFill) {
-            this.energyFill.style.width = `${this.gameState.energy}%`;
-        }
-
-        // Update shield status
-        if (this.shieldStatus) {
-            this.shieldStatus.textContent = this.gameState.shieldActive ? 'Active' : 'Ready';
-        }
-
-        // Show game over screen if needed
-        if (this.gameState.gameOver) {
-            this.showGameOver();
-        }
-
         if (this.gameState.gameStarted && !this.gameState.paused) {
             this.updateLeaderboard();
+            this.updateEnergyBar();
+            this.updateShieldStatus();
         }
     }
 
@@ -278,6 +244,18 @@ export class UIController {
 
                 this.rankingsList.innerHTML = newHTML;
             }
+        }
+    }
+
+    updateEnergyBar() {
+        if (this.energyFill) {
+            this.energyFill.style.width = `${this.gameState.energy}%`;
+        }
+    }
+
+    updateShieldStatus() {
+        if (this.shieldStatus) {
+            this.shieldStatus.textContent = this.gameState.shieldActive ? 'Active' : 'Ready';
         }
     }
 } 
