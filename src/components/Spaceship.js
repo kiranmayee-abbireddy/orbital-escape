@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { gsap } from '/node_modules/gsap/index.js';
+import { gsap } from 'gsap';
 import { createMetallicTexture, createNormalMap } from '../utils/TextureGenerator.js';
 
 export class Spaceship {
@@ -43,6 +43,10 @@ export class Spaceship {
     }
 
     createModel() {
+        // Use the generated textures directly
+        const metalTexture = this.metalTexture;
+        const normalMap = this.normalMap;
+        
         // Main disc (core body)
         const discGeometry = new THREE.CylinderGeometry(2, 2.2, 0.5, 32);
         const discMaterial = new THREE.MeshPhongMaterial({

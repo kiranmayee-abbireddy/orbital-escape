@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "echo 'No build step needed'",
-    "deploy": "gh-pages -d ."
+    "build": "mkdir -p dist && cp -r src index.html assets dist/",
+    "deploy": "gh-pages -d dist"
   },
   "keywords": [],
   "author": "",
