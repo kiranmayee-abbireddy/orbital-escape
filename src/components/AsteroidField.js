@@ -113,4 +113,34 @@ export class AsteroidField {
         this.material.dispose();
         this.asteroids = [];
     }
+
+    createAsteroid() {
+        const geometry = new THREE.IcosahedronGeometry(1, 0);
+        const material = new THREE.MeshPhongMaterial({
+            color: 0x888888,
+            shininess: 30,
+            flatShading: true
+        });
+        
+        const mesh = new THREE.Mesh(geometry, material);
+        const scale = 1 + Math.random() * 2;
+        mesh.scale.set(scale, scale, scale);
+        
+        // Random position
+        mesh.position.set(
+            (Math.random() - 0.5) * 200,
+            (Math.random() - 0.5) * 200,
+            (Math.random() - 0.5) * 200
+        );
+        
+        // Create asteroid object with position directly accessible
+        const asteroid = {
+            position: mesh.position,
+            scale: mesh.scale,
+            mesh: mesh
+        };
+        
+        this.scene.add(mesh);
+        return asteroid;
+    }
 } 

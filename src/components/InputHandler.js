@@ -19,13 +19,15 @@ export class InputHandler {
             Space: false
         };
 
-        // Touch controls state
+        // Touch controls state with higher threshold
         this.touchControls = {
             moveX: 0,
             moveY: 0,
-            verticalMoveY: 0,
+            verticalMove: 0,
             touchStartX: 0,
-            touchStartY: 0
+            touchStartY: 0,
+            verticalStartY: 0,
+            threshold: 0.2  // Increased threshold to prevent accidental movement
         };
 
         this.setupKeyboardControls();
@@ -59,27 +61,14 @@ export class InputHandler {
     }
 
     setupTouchControls() {
-        // Create touch control elements
-        const touchControls = document.createElement('div');
-        touchControls.className = 'touch-controls';
-        touchControls.innerHTML = `
-            <div class="touch-zone movement-zone"></div>
-            <div class="touch-zone vertical-zone"></div>
-            <div class="touch-buttons">
-                <button class="shield-button">Shield</button>
-                <button class="magnet-button">Magnet</button>
-            </div>
-        `;
-        document.body.appendChild(touchControls);
+        const movementZone = document.querySelector('.movement-zone');
+        const verticalZone = document.querySelector('.vertical-zone');
+        const shieldButton = document.querySelector('.shield-button');
+        const magnetButton = document.querySelector('.magnet-button');
 
-        // Get touch zones
-        const movementZone = touchControls.querySelector('.movement-zone');
-        const verticalZone = touchControls.querySelector('.vertical-zone');
-        const shieldButton = touchControls.querySelector('.shield-button');
-        const magnetButton = touchControls.querySelector('.magnet-button');
-
-        // Movement zone touch handlers
+        // Movement touch handling
         movementZone.addEventListener('touchstart', (e) => {
+            e.preventDefault();
             const touch = e.touches[0];
             this.touchControls.touchStartX = touch.clientX;
             this.touchControls.touchStartY = touch.clientY;
@@ -88,8 +77,12 @@ export class InputHandler {
         movementZone.addEventListener('touchmove', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
-            this.touchControls.moveX = (touch.clientX - this.touchControls.touchStartX) / 50;
-            this.touchControls.moveY = (touch.clientY - this.touchControls.touchStartY) / 50;
+            const deltaX = touch.clientX - this.touchControls.touchStartX;
+            const deltaY = touch.clientY - this.touchControls.touchStartY;
+            
+            // Convert deltas to movement (-1 to 1 range)
+            this.touchControls.moveX = Math.max(-1, Math.min(1, deltaX / 50));
+            this.touchControls.moveY = Math.max(-1, Math.min(1, deltaY / 50));
         });
 
         movementZone.addEventListener('touchend', () => {
@@ -97,23 +90,25 @@ export class InputHandler {
             this.touchControls.moveY = 0;
         });
 
-        // Vertical movement zone handlers
+        // Vertical movement touch handling
         verticalZone.addEventListener('touchstart', (e) => {
+            e.preventDefault();
             const touch = e.touches[0];
-            this.touchControls.touchStartY = touch.clientY;
+            this.touchControls.verticalStartY = touch.clientY;
         });
 
         verticalZone.addEventListener('touchmove', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
-            this.touchControls.verticalMoveY = (touch.clientY - this.touchControls.touchStartY) / 50;
+            const deltaY = touch.clientY - this.touchControls.verticalStartY;
+            this.touchControls.verticalMove = Math.max(-1, Math.min(1, deltaY / 50));
         });
 
         verticalZone.addEventListener('touchend', () => {
-            this.touchControls.verticalMoveY = 0;
+            this.touchControls.verticalMove = 0;
         });
 
-        // Shield button handler
+        // Shield button
         shieldButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
             this.keys.Space = true;
@@ -123,7 +118,7 @@ export class InputHandler {
             this.keys.Space = false;
         });
 
-        // Magnet button handler
+        // Magnet button
         magnetButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
             this.keys.Shift = true;
@@ -135,28 +130,39 @@ export class InputHandler {
     }
 
     update() {
-        // Keyboard controls
-        this.spaceship.moveForward = this.keys.ArrowUp || this.keys.w;
-        this.spaceship.moveBackward = this.keys.ArrowDown || this.keys.s;
-        this.spaceship.moveLeft = this.keys.ArrowLeft || this.keys.a;
-        this.spaceship.moveRight = this.keys.ArrowRight || this.keys.d;
-        this.spaceship.moveUp = this.keys.q;
-        this.spaceship.moveDown = this.keys.e;
+        // Reset movement flags first
+        this.spaceship.moveForward = false;
+        this.spaceship.moveBackward = false;
+        this.spaceship.moveLeft = false;
+        this.spaceship.moveRight = false;
+        this.spaceship.moveUp = false;
+        this.spaceship.moveDown = false;
+
+        // Update movement based on touch controls with higher threshold
+        if (Math.abs(this.touchControls.moveX) > this.touchControls.threshold) {
+            this.spaceship.moveLeft = this.touchControls.moveX < -this.touchControls.threshold;
+            this.spaceship.moveRight = this.touchControls.moveX > this.touchControls.threshold;
+        }
+        
+        if (Math.abs(this.touchControls.moveY) > this.touchControls.threshold) {
+            this.spaceship.moveForward = this.touchControls.moveY < -this.touchControls.threshold;
+            this.spaceship.moveBackward = this.touchControls.moveY > this.touchControls.threshold;
+        }
+        
+        if (Math.abs(this.touchControls.verticalMove) > this.touchControls.threshold) {
+            this.spaceship.moveUp = this.touchControls.verticalMove < -this.touchControls.threshold;
+            this.spaceship.moveDown = this.touchControls.verticalMove > this.touchControls.threshold;
+        }
+
+        // Update keyboard controls
+        if (this.keys.ArrowUp || this.keys.w) this.spaceship.moveForward = true;
+        if (this.keys.ArrowDown || this.keys.s) this.spaceship.moveBackward = true;
+        if (this.keys.ArrowLeft || this.keys.a) this.spaceship.moveLeft = true;
+        if (this.keys.ArrowRight || this.keys.d) this.spaceship.moveRight = true;
+        if (this.keys.q) this.spaceship.moveUp = true;
+        if (this.keys.e) this.spaceship.moveDown = true;
+        
         this.spaceship.shieldActive = this.keys.Space;
         this.spaceship.magneticFieldActive = this.keys.Shift;
-
-        // Touch controls
-        if (Math.abs(this.touchControls.moveX) > 0.1 || Math.abs(this.touchControls.moveY) > 0.1) {
-            this.spaceship.moveLeft = this.touchControls.moveX < 0;
-            this.spaceship.moveRight = this.touchControls.moveX > 0;
-            this.spaceship.moveForward = this.touchControls.moveY < 0;
-            this.spaceship.moveBackward = this.touchControls.moveY > 0;
-        }
-
-        // Handle vertical movement from vertical control
-        if (Math.abs(this.touchControls.verticalMoveY) > 0.1) {
-            this.spaceship.moveUp = this.touchControls.verticalMoveY < 0;
-            this.spaceship.moveDown = this.touchControls.verticalMoveY > 0;
-        }
     }
 } 

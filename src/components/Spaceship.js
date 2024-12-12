@@ -610,4 +610,81 @@ export class Spaceship {
 
         requestAnimationFrame(animate);
     }
+
+    // Add collision detection method
+    checkAsteroidCollision(asteroids) {
+        if (!asteroids || this.invulnerable) return false;
+
+        for (const asteroid of asteroids) {
+            const distance = this.mesh.position.distanceTo(asteroid.position);
+            const collisionThreshold = 2 + (asteroid.scale ? asteroid.scale.x : 1);
+            
+            if (distance < collisionThreshold) {
+                if (!this.gameState.shieldActive) {
+                    return true;  // Return true to trigger game over
+                }
+                // If shield is active, give brief invulnerability
+                this.invulnerable = true;
+                setTimeout(() => {
+                    this.invulnerable = false;
+                }, 1000);
+            }
+        }
+        return false;
+    }
+
+    onAsteroidCollision() {
+        if (this.invulnerable) return;
+        
+        // Visual feedback
+        this.pulseEngineGlow();
+        
+        // Play collision sound
+        if (this.soundManager) {
+            this.soundManager.playSound('explosion');
+        }
+
+        // Game over if shield is not active and game isn't already over
+        if (!this.gameState.shieldActive && !this.gameState.gameOver) {
+            this.gameState.gameOver = true;
+        } else if (this.gameState.shieldActive) {
+            // If shield is active, give brief invulnerability
+            this.invulnerable = true;
+            setTimeout(() => {
+                this.invulnerable = false;
+            }, 1000);
+        }
+    }
+
+    reset(position = null) {
+        // Reset position and velocity
+        if (position) {
+            this.mesh.position.copy(position);
+        } else {
+            this.mesh.position.set(0, 0, 0);
+        }
+        this.velocity.set(0, 0, 0);
+        this.acceleration.set(0, 0, 0);
+        
+        // Reset game-related properties
+        this.invulnerable = false;
+        if (this.blinkInterval) {
+            clearInterval(this.blinkInterval);
+        }
+        
+        // Reset movement flags
+        this.moveForward = false;
+        this.moveBackward = false;
+        this.moveLeft = false;
+        this.moveRight = false;
+        
+        // Reset special abilities
+        this.tractorBeamActive = false;
+        if (this.tractorBeam) {
+            this.tractorBeam.visible = false;
+        }
+        
+        // Reset magnetic field
+        this.hideMagneticFieldEffect();
+    }
 } 

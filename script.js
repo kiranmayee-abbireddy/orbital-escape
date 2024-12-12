@@ -99,6 +99,26 @@ function animate() {
     if (!gameState.paused && gameState.gameStarted && !gameState.gameOver) {
         // Update game components
         inputHandler.update();
+        
+        // Check for asteroid collisions before updating player position
+        if (spaceship.checkAsteroidCollision(asteroidField.getAsteroids())) {
+            if (!gameState.shieldActive) {
+                // Create explosion at ship's position
+                createExplosion(spaceship.position);
+                
+                // Trigger game over
+                gameState.gameOver = true;
+                uiController.showGameOver();
+                
+                // Play explosion sound
+                soundManager.playSound('explosion');
+                
+                // Stop background music
+                soundManager.stopBackgroundMusic();
+            }
+        }
+
+        // Continue with normal updates if no collision or shield is active
         spaceship.update();
         cameraController.update();
         asteroidField.update(spaceship.getPosition());
@@ -122,3 +142,56 @@ function animate() {
 
 // Start animation loop
 animate();
+
+// Add explosion effect
+function createExplosion(position) {
+    const particleCount = 30;
+    const particles = new THREE.Group();
+    
+    for (let i = 0; i < particleCount; i++) {
+        const geometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0xff4400,
+            transparent: true,
+            opacity: 1
+        });
+        const particle = new THREE.Mesh(geometry, material);
+        
+        // Random direction
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        const speed = 0.2 + Math.random() * 0.3;
+        
+        particle.velocity = new THREE.Vector3(
+            Math.sin(phi) * Math.cos(theta),
+            Math.sin(phi) * Math.sin(theta),
+            Math.cos(phi)
+        ).multiplyScalar(speed);
+        
+        particle.position.copy(position);
+        particles.add(particle);
+    }
+    
+    scene.add(particles);
+    
+    // Animate explosion
+    function animateExplosion() {
+        particles.children.forEach((particle, index) => {
+            particle.position.add(particle.velocity);
+            particle.material.opacity -= 0.02;
+            
+            if (particle.material.opacity <= 0) {
+                particles.remove(particle);
+                if (particles.children.length === 0) {
+                    scene.remove(particles);
+                }
+            }
+        });
+        
+        if (particles.children.length > 0) {
+            requestAnimationFrame(animateExplosion);
+        }
+    }
+    
+    animateExplosion();
+}

@@ -247,9 +247,9 @@ button:hover {
     margin: 5px 0;
 }
 
-/* Touch controls */
+/* Touch Controls */
 .touch-controls {
-    display: none;
+    display: none; /* Hidden by default, shown on mobile */
     position: fixed;
     bottom: 0;
     left: 0;
@@ -258,49 +258,58 @@ button:hover {
     pointer-events: none;
 }
 
-.touch-zone {
+.left-controls, .right-controls {
     position: absolute;
-    width: 150px;
-    height: 150px;
-    border-radius: 75px;
-    background: rgba(255, 255, 255, 0.2);
+    bottom: 20px;
     pointer-events: auto;
 }
 
-.movement-zone {
+.left-controls {
     left: 20px;
-    bottom: 20px;
 }
 
-.vertical-zone {
+.right-controls {
     right: 20px;
-    bottom: 20px;
+    display: flex;
+    gap: 20px;
 }
 
-.touch-buttons {
-    position: absolute;
-    right: 180px;
-    bottom: 20px;
+.touch-zone {
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 60px;
+}
+
+.action-buttons {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    pointer-events: auto;
 }
 
-.touch-buttons button {
+.action-buttons button {
     width: 60px;
     height: 60px;
     border-radius: 30px;
-    background: rgba(255, 255, 255, 0.3);
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    color: white;
-    font-size: 12px;
+    background: rgba(0, 255, 255, 0.2);
+    border: 2px solid rgba(0, 255, 255, 0.4);
+    color: #00ffff;
+    font-size: 14px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Show touch controls only on touch devices */
 @media (hover: none) and (pointer: coarse) {
     .touch-controls {
         display: block;
+    }
+
+    .hud-bottom {
+        bottom: 240px; /* Move HUD above touch controls */
     }
 }
 

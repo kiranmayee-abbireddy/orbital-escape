@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 export class UIController {
     constructor(gameState, soundManager) {
         this.gameState = gameState;
@@ -38,35 +40,21 @@ export class UIController {
         const startButton = document.getElementById('start-game');
         if (startButton) {
             startButton.addEventListener('click', () => {
-                console.log('Start button clicked'); // Debug log
                 this.startGame();
             });
-        } else {
-            console.error('Start button not found');
         }
 
-        // Pause menu buttons
-        const resumeButton = document.getElementById('resume');
-        const restartButton = document.getElementById('restart');
-        if (resumeButton) resumeButton.addEventListener('click', () => this.togglePause());
-        if (restartButton) restartButton.addEventListener('click', () => this.restartGame());
-
-        // Game over menu buttons
-        const restartGameButton = document.getElementById('restart-game');
+        // Only keep Main Menu button handler
         const returnMenuButton = document.getElementById('return-menu');
-        if (restartGameButton) {
-            restartGameButton.addEventListener('click', () => {
-                this.restartGame();
-                this.gameOverMenu.classList.add('hidden');
-            });
-        }
         if (returnMenuButton) {
-            returnMenuButton.addEventListener('click', () => this.returnToMainMenu());
+            returnMenuButton.addEventListener('click', () => {
+                this.returnToMainMenu();
+            });
         }
 
         // ESC key for pause
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.gameState.gameStarted) {
+            if (e.key === 'Escape' && this.gameState.gameStarted && !this.gameState.gameOver) {
                 this.togglePause();
             }
         });
@@ -75,10 +63,9 @@ export class UIController {
     startGame() {
         console.log('Starting game...'); 
         
-        // Hide start menu
-        if (this.startMenu) {
-            this.startMenu.classList.add('hidden');
-        }
+        // Hide all menus
+        this.startMenu.classList.add('hidden');
+        this.gameOverMenu.classList.add('hidden');
 
         // Generate new AI names only when starting a new game
         this.generateNewAINames();
@@ -91,13 +78,35 @@ export class UIController {
         this.gameState.score = 0;
         this.gameState.energy = 100;
 
+        // Reset all spaceships with random positions
+        this.gameState.spaceships.forEach((ship, index) => {
+            if (ship.reset) {
+                if (index === 0) {
+                    // Player ship starts at a random position away from center
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = 50;
+                    const startPos = new THREE.Vector3(
+                        Math.cos(angle) * radius,
+                        (Math.random() - 0.5) * 20,
+                        Math.sin(angle) * radius
+                    );
+                    ship.reset(startPos);
+                } else {
+                    // AI ships get random positions
+                    const randomPos = new THREE.Vector3(
+                        (Math.random() - 0.5) * 100,
+                        (Math.random() - 0.5) * 100,
+                        (Math.random() - 0.5) * 100
+                    );
+                    ship.reset(randomPos);
+                }
+            }
+        });
+
         // Start background music
         if (this.soundManager) {
             this.soundManager.startBackgroundMusic();
         }
-
-        // Reset all game objects
-        this.resetGameObjects();
     }
 
     generateNewAINames() {
@@ -121,18 +130,23 @@ export class UIController {
         this.pauseMenu.classList.toggle('hidden');
     }
 
-    restartGame() {
-        this.gameState.score = 0;
-        this.gameState.energy = 100;
-        this.gameState.paused = false;
-        this.pauseMenu.classList.add('hidden');
-        // Additional reset logic can be added here
-    }
-
     returnToMainMenu() {
+        // Hide game over menu and show start menu
         this.gameOverMenu.classList.add('hidden');
         this.startMenu.classList.remove('hidden');
+        
+        // Reset game state
+        this.gameState.gameOver = false;
+        this.gameState.gameStarted = false;
+        this.gameState.paused = false;
+        
+        // Reset all game objects
         this.resetGame();
+        
+        // Stop background music
+        if (this.soundManager) {
+            this.soundManager.stopBackgroundMusic();
+        }
     }
 
     resetGame() {

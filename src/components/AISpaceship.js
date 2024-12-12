@@ -173,4 +173,23 @@ export class AISpaceship extends Spaceship {
         direction.normalize();
         this.accelerate(direction);
     }
+
+    reset() {
+        // Call parent reset
+        super.reset();
+        
+        // Reset AI-specific properties
+        this.state = 'seeking';
+        this.target = null;
+        this.lastWanderTime = 0;
+        this.score = 0;
+        
+        // Randomize position
+        const randomPosition = new THREE.Vector3(
+            (Math.random() - 0.5) * 100,
+            (Math.random() - 0.5) * 100,
+            (Math.random() - 0.5) * 100
+        );
+        this.mesh.position.copy(randomPosition);
+    }
 } 

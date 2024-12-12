@@ -16,6 +16,7 @@
         }
     }
     </script>
+    <base href="./">
 </head>
 <body>
     <div id="game-container">
@@ -71,9 +72,7 @@
             <h2>Game Over</h2>
             <div class="final-stats">
                 <p>Score: <span id="final-score">0</span></p>
-                <p>Time: <span id="final-time">0:00</span></p>
             </div>
-            <button id="restart-game">Try Again</button>
             <button id="return-menu">Main Menu</button>
         </div>
 
@@ -81,6 +80,19 @@
             <h3>Arena Rankings</h3>
             <div id="rankings-list">
                 <!-- Rankings will be populated dynamically -->
+            </div>
+        </div>
+
+        <div class="touch-controls">
+            <div class="left-controls">
+                <div class="touch-zone movement-zone"></div>
+            </div>
+            <div class="right-controls">
+                <div class="touch-zone vertical-zone"></div>
+                <div class="action-buttons">
+                    <button class="shield-button">Shield</button>
+                    <button class="magnet-button">Magnet</button>
+                </div>
             </div>
         </div>
     </div>
